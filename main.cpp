@@ -2,7 +2,8 @@
 #include <GL/gl.h>
 #include <unistd.h>
 #include "vec2.hpp"
-
+#include <cstdlib>
+#include <time.h>
 #include <vector>
 
 #include <iostream>
@@ -20,23 +21,27 @@ void drawVectorPoints(std::vector<vec2> *v)
     glEnd();
 }
 
+void addPoints(std::vector<vec2> *initial_points, std::vector<vec2> *points, int add_points_count)
+{
+    for(int i=0; i<add_points_count; i++)
+        {
+            int rand_point = rand()%initial_points->size();
+
+            vec2 new_point = (points->at(points->size()-1) + 2.0*initial_points->at(rand_point))/3.f;
+
+            points->push_back(new_point);
+        }
+}
+
 int main(int argc, char **argv)
 {
-    std::vector<vec2> initial_points;
-    initial_points.push_back(vec2(-1.0, 1.0));
-    initial_points.push_back(vec2(0.0, 1.0));
-    initial_points.push_back(vec2(1.0, 1.0));
-    initial_points.push_back(vec2(-1.0, -1.0));
-    initial_points.push_back(vec2(0.0, -1.0));
-    initial_points.push_back(vec2(1.0, -1.0));
-    initial_points.push_back(vec2(-1.0, 0.0));
-    initial_points.push_back(vec2(1.0, 0.0));
+    srand(time(NULL));
 
-    int initial_points_count = initial_points.size();
+    std::vector<vec2> initial_points;
 
     float delay = 100;
 
-    int inc_point_size = 5;
+    int add_points_count = 5;
 
     sf::Clock delay_timer;
 
@@ -45,6 +50,10 @@ int main(int argc, char **argv)
 
     sf::RenderWindow window(sf::VideoMode(700, 700), "Chaos");
     window.setFramerateLimit(30);
+
+    bool is_points_input_end = false;
+    bool mouse_left_pressed = false;
+    bool space_pressed = false;
 
     while(window.isOpen())
     {
@@ -55,22 +64,42 @@ int main(int argc, char **argv)
         }
         window.clear();
 
-        if(delay_timer.getElapsedTime().asMicroseconds() > delay)
+        if(!is_points_input_end)
         {
-            for(int i=0; i<inc_point_size; i++)
+            if(sf::Mouse::isButtonPressed(sf::Mouse::Left) && !mouse_left_pressed)
             {
-                int rand_point = rand()%initial_points_count;
+                sf::Vector2i mouse_coords = sf::Mouse::getPosition(window);
+                mouse_coords.y = window.getSize().y - mouse_coords.y;
+                mouse_coords -= sf::Vector2i(window.getSize())/2;
 
-                vec2 new_point = (points[points.size()-1] + 2*initial_points[rand_point])/3.f;
+                vec2 mouse_pos(mouse_coords.x/float(window.getSize().x/2.0), mouse_coords.y/float(window.getSize().y/2.0));
 
-                points.push_back(new_point);
+                if((abs(mouse_pos.x) <= 1.0) && (abs(mouse_pos.y) <= 1.0))
+                    initial_points.push_back(mouse_pos);
+
+                mouse_left_pressed = true;
             }
 
-            delay_timer.restart();
-        }
+            if(mouse_left_pressed && !sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                mouse_left_pressed = false;
 
-        drawVectorPoints(&initial_points);
-        drawVectorPoints(&points);
+            if(space_pressed && !sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+                space_pressed = false;
+
+            drawVectorPoints(&initial_points);
+        }
+        else
+        {
+            if(delay_timer.getElapsedTime().asMicroseconds() > delay)
+            {
+                addPoints(&initial_points, &points, add_points_count);
+
+                delay_timer.restart();
+            }
+
+            drawVectorPoints(&initial_points);
+            drawVectorPoints(&points);
+        }
 
         window.display();
         usleep(10000);
