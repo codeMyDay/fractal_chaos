@@ -33,6 +33,20 @@ void addPoints(std::vector<vec2> *initial_points, std::vector<vec2> *points, int
         }
 }
 
+void addMiddlePoints(std::vector<vec2> *points)
+{
+    int points_count = points->size();
+
+    for(int i=0; i<points_count-1; i++)
+    {
+        vec2 middle = (points->at(i) + points->at(i+1))/2.0;
+        points->push_back(middle);
+    }
+
+    vec2 middle = (points->at(0) + points->at(points_count-1))/2.0;
+    points->push_back(middle);
+}
+
 int main(int argc, char **argv)
 {
     srand(time(NULL));
@@ -42,6 +56,8 @@ int main(int argc, char **argv)
     float delay = 100;
 
     int add_points_count = 5;
+    if(argc > 1)
+        add_points_count = std::atoi(argv[1]);
 
     sf::Clock delay_timer;
 
@@ -78,6 +94,18 @@ int main(int argc, char **argv)
                     initial_points.push_back(mouse_pos);
 
                 mouse_left_pressed = true;
+            }
+
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && !space_pressed)
+            {
+                addMiddlePoints(&initial_points);
+
+                space_pressed = true;
+            }
+
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
+            {
+                is_points_input_end = true;
             }
 
             if(mouse_left_pressed && !sf::Mouse::isButtonPressed(sf::Mouse::Left))
